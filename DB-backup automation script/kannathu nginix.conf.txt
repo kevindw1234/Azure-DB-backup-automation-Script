@@ -1,0 +1,54 @@
+# Redirect all HTTP to HTTPS (frontend + backend)
+server {
+    if ($host = crm.kannattu.pixelsoft.online) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    if ($host = kannattu.pixelsoft.online) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name kannattu.pixelsoft.online www.kannattu.pixelsoft.online crm.kannattu.pixelsoft.online www.crm.kannattu.pixelsoft.online;
+    return 301 https://$host$request_uri;
+
+
+
+
+}
+
+# HTTPS server for FRONTEND
+server {
+    listen 443 ssl;
+    server_name kannattu.pixelsoft.online www.kannattu.pixelsoft.online;
+    ssl_certificate /etc/letsencrypt/live/kannattu.pixelsoft.online/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/kannattu.pixelsoft.online/privkey.pem; # managed by Certbot
+
+    root /home/pixel/CRM-pixel/site/kannattu.pixelsoft.online;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+}
+
+# HTTPS server for BACKEND (proxy to Django backend at port 8096)
+server {
+    listen 443 ssl;
+    server_name crm.kannattu.pixelsoft.online www.crm.kannattu.pixelsoft.online;
+    ssl_certificate /etc/letsencrypt/live/kannattu.pixelsoft.online/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/kannattu.pixelsoft.online/privkey.pem; # managed by Certbot
+
+
+    location / {
+        proxy_pass http://127.0.0.1:8096;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+}
